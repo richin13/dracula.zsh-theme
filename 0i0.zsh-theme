@@ -35,10 +35,10 @@ prompt_end() {
 }
 
 # Virtualenv: current working virtualenv
-prompt_virtualenv() {
-  local virtualenv_path="$CONDA_DEFAULT_ENV"
-  if [[ -n $virtualenv_path ]]; then
-    prompt_segment CURRENT_BG 193 "$(basename $virtualenv_path) "
+prompt_pyenv() {
+  if [[ -f requirements.txt || -f pyproject.toml || -n *.py(#qN^/) ]]; then
+    local pyenv_status=${$(pyenv version-name 2>/dev/null)//:/ }
+    prompt_segment CURRENT_BG 42 "[$pyenv_status] "
   fi
 }
 
@@ -61,6 +61,9 @@ prompt_git() {
     test -n "$(git status --porcelain --ignore-submodules)"
   }
   ref="$vcs_info_msg_0_"
+  # ref="${ref#heads/}"
+  # ref="${ref/.../}"
+
   if [[ -n "$ref" ]]; then
     if is_dirty; then
       color=228
@@ -81,7 +84,11 @@ prompt_git() {
 
 # Dir: current working directory
 prompt_dir() {
-  prompt_segment CURRENT_BG 210 '%~ '
+  prompt_segment CURRENT_BG 210 '%U%2~%u '
+}
+
+prompt_new_line() {
+  prompt_segment CURRENT_BG default "\n"
 }
 
 # Status:
@@ -95,18 +102,24 @@ prompt_status() {
   [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}$LIGHTNING"
   [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}$GEAR"
 
-  [[ -n "$symbols" ]] && prompt_segment CURRENT_BG default " $symbols "
+  [[ -n "$symbols" ]] && prompt_segment CURRENT_BG default "$symbols "
+}
+
+prompt_prompt() {
+  prompt_segment CURRENT_BG 255 "+ "
 }
 
 ## Main prompt
 prompt_agnoster_main() {
   RETVAL=$?
   CURRENT_BG='NONE'
-  prompt_status
-  prompt_virtualenv
-#   prompt_context
+  # prompt_context
   prompt_dir
   prompt_git
+  prompt_pyenv
+  prompt_new_line
+  prompt_status
+  prompt_prompt
   prompt_end
 }
 
