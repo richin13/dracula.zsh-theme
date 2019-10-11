@@ -34,12 +34,15 @@ prompt_end() {
   CURRENT_BG=''
 }
 
-# Virtualenv: current working virtualenv
-prompt_pyenv() {
-  if [[ -f requirements.txt || -f pyproject.toml || -n *.py(#qN^/) ]]; then
-    local pyenv_status=${$(pyenv version-name 2>/dev/null)//:/ }
-    prompt_segment CURRENT_BG 42 "[$pyenv_status] "
+# Python version: global or virtualenv
+prompt_python_version() {
+  local prefix=""
+  if [[ -n $VIRTUAL_ENV ]]; then
+    prefix="$(basename $VIRTUAL_ENV) // "
   fi
+
+  local py_version=${$(python --version 2>/dev/null | cut -d ' ' -f 2)}
+  prompt_segment CURRENT_BG 42 "[$prefix$py_version] "
 }
 
 ### Prompt components
@@ -116,7 +119,7 @@ prompt_agnoster_main() {
   # prompt_context
   prompt_dir
   prompt_git
-  prompt_pyenv
+  prompt_python_version
   prompt_new_line
   prompt_status
   prompt_prompt
