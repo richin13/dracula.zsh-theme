@@ -5,7 +5,7 @@ PRIMARY_FG=black
 # Characters
 SEGMENT_SEPARATOR="\ue0b0"
 PLUSMINUS="\u00b1"
-BRANCH="\ue0a0"
+BRANCH="\ue702"
 DETACHED="\u27a6"
 CROSS="\u2718"
 LIGHTNING="\u26a1"
@@ -34,27 +34,20 @@ prompt_end() {
   CURRENT_BG=''
 }
 
-# Python version: global or virtualenv
-prompt_python_version() {
-  local prefix=""
-  if [[ -n $VIRTUAL_ENV ]]; then
-    prefix="$(basename $VIRTUAL_ENV) // "
-  fi
-
-  local py_version=${$(python --version 2>/dev/null | cut -d ' ' -f 2)}
-  prompt_segment CURRENT_BG 42 "[$prefix$py_version] "
-}
+###############################################################################
+# Begin sections
+# E.g prompt
+# <cwd>  <git> [<python_version>]
+# <prompt prefix> |
+###############################################################################
 
 ### Prompt components
-# Each component will draw itself, and hide itself if no information needs to be shown
+# Each component will draw itself, and hide itself if no information needs to
+# be shown.
 
-# Context: user@hostname (who am I and where am I)
-prompt_context() {
-  local user=`whoami`
-
-  if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_CONNECTION" ]]; then
-    prompt_segment $PRIMARY_FG default " %(!.%{%F{yellow}%}.)$user@%m "
-  fi
+# Dir: current working directory
+prompt_dir() {
+  prompt_segment CURRENT_BG 12 '%U%2~%u '
 }
 
 # Git: branch/detached head, dirty status
@@ -69,10 +62,10 @@ prompt_git() {
 
   if [[ -n "$ref" ]]; then
     if is_dirty; then
-      color=228
+      color=11
       ref="${ref} $PLUSMINUS"
     else
-      color=156
+      color=10
       ref="${ref}"
     fi
     if [[ "${ref/.../}" == "$ref" ]]; then
@@ -80,14 +73,29 @@ prompt_git() {
     else
       b="$DETACHED"
     fi
-    prompt_segment CURRENT_BG 224 "$b "
+    prompt_segment CURRENT_BG 1 "$b "
     prompt_segment CURRENT_BG $color "$ref "
   fi
 }
 
-# Dir: current working directory
-prompt_dir() {
-  prompt_segment CURRENT_BG 210 '%U%2~%u '
+# Python version: global or virtualenv
+prompt_python_version() {
+  local prefix=""
+  if [[ -n $VIRTUAL_ENV ]]; then
+    prefix="$(basename $VIRTUAL_ENV) // "
+  fi
+
+  local py_version=${$(python --version 2>/dev/null | cut -d ' ' -f 2)}
+  prompt_segment CURRENT_BG 5 "[$prefix$py_version] "
+}
+
+# Context: user@hostname (who am I and where am I)
+prompt_context() {
+  local user=`whoami`
+
+  if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_CONNECTION" ]]; then
+    prompt_segment $PRIMARY_FG default " %(!.%{%F{yellow}%}.)$user@%m "
+  fi
 }
 
 prompt_new_line() {
@@ -109,7 +117,7 @@ prompt_status() {
 }
 
 prompt_prompt() {
-  prompt_segment CURRENT_BG 255 "+ "
+  prompt_segment CURRENT_BG 10 "Ψ "
 }
 
 ## Main prompt
