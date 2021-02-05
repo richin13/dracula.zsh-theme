@@ -124,7 +124,7 @@ prompt_prompt() {
 prompt_agnoster_main() {
   RETVAL=$?
   CURRENT_BG='NONE'
-  # prompt_context
+  prompt_context
   prompt_dir
   prompt_git
   prompt_python_version
