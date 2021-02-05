@@ -93,7 +93,7 @@ prompt_python_version() {
 prompt_context() {
   local user=`whoami`
 
-  if [[ "$user" = "$DEFAULT_USER" || -n "$SSH_CONNECTION" ]]; then
+  if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_CONNECTION" ]]; then
     prompt_segment CURRENT_BG 8 "$user@%m "
   fi
 }
