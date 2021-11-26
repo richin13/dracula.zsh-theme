@@ -52,41 +52,49 @@ prompt_dir() {
 
 # Git: branch/detached head, dirty status
 prompt_git() {
-  local color ref
+  local color ref symbol maxchars suffix
+  maxchars=38
   is_dirty() {
     test -n "$(git status --porcelain --ignore-submodules)"
   }
   ref="$vcs_info_msg_0_"
-  # ref="${ref#heads/}"
-  # ref="${ref/.../}"
 
   if [[ -n "$ref" ]]; then
     if is_dirty; then
       color=11
-      ref="${ref} $PLUSMINUS"
+      symbol="$PLUSMINUS"
     else
       color=10
-      ref="${ref}"
+      symbol=""
     fi
     if [[ "${ref/.../}" == "$ref" ]]; then
       b="$BRANCH"
     else
       b="$DETACHED"
     fi
-    prompt_segment CURRENT_BG 1 "$b "
-    prompt_segment CURRENT_BG $color "$ref "
+    [[ "${#ref}" -gt "$maxchars" ]] && suffix="..." || suffix=""
+    prompt_segment CURRENT_BG 9 "$b "
+    prompt_segment CURRENT_BG $color "${ref:0:$maxchars}$suffix "
+    prompt_segment CURRENT_BG $color "$symbol "
   fi
 }
 
-# Python version: global or virtualenv
-prompt_python_version() {
+# Sofware version: global or virtualenv
+# node
+prompt_software_version() {
   local prefix=""
   if [[ -n $VIRTUAL_ENV ]]; then
     prefix="$(basename $VIRTUAL_ENV) // "
   fi
 
-  local py_version=${$(python --version 2>/dev/null | cut -d ' ' -f 2)}
-  prompt_segment CURRENT_BG 5 "[$prefix$py_version] "
+  local py_version=${$(python3 --version 2>/dev/null | cut -d ' ' -f 2)}
+  prompt_segment CURRENT_BG 14 "[$prefix$py_version] "
+
+  #: Show node version when there's a package.json file in cwd
+  if [[ -f package.json ]]; then
+    local node_version=${$(node --version 2>/dev/null)}
+    prompt_segment CURRENT_BG 14 "[node:$node_version] "
+  fi
 }
 
 # Context: user@hostname (who am I and where am I)
@@ -102,55 +110,68 @@ prompt_new_line() {
   prompt_segment CURRENT_BG default "\n"
 }
 
-# Status:
-# - was there an error
-# - am I root
-# - are there background jobs?
-prompt_status() {
-  local symbols
-  symbols=()
-  [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}$CROSS"
-  [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}$LIGHTNING"
-  [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}$GEAR"
-
-  [[ -n "$symbols" ]] && prompt_segment CURRENT_BG default "$symbols "
-}
-
 prompt_prompt() {
-  prompt_segment CURRENT_BG 10 "Ψ "
+  local color=13
+  [[ $RETVAL -ne 0 ]] && color=9
+  prompt_segment CURRENT_BG $color "%(!.#.Ψ) "
 }
 
 ## Main prompt
-prompt_agnoster_main() {
-  RETVAL=$?
-  CURRENT_BG='NONE'
+top_left () {
   prompt_dir
   prompt_git
-  prompt_python_version
-  prompt_context
+}
+
+top_right () {
+  prompt_software_version
+}
+
+prompt_main() {
+  RETVAL=$?
+  CURRENT_BG='NONE'
+  local left="$(top_left)"
+  local right="$(top_right)"
+  print -n "$left$(get_space $left $right)$right"
   prompt_new_line
-  prompt_status
   prompt_prompt
   prompt_end
 }
 
-prompt_agnoster_precmd() {
-  vcs_info
-  PROMPT='%{%f%b%k%}$(prompt_agnoster_main)'
+right_prompt_main() {
+  prompt_context
 }
 
-prompt_agnoster_setup() {
+prompt_precmd() {
+  vcs_info
+  PROMPT='$(prompt_main)'
+  RPROMPT='$(right_prompt_main)'
+}
+
+prompt_setup() {
   autoload -Uz add-zsh-hook
   autoload -Uz vcs_info
 
   prompt_opts=(cr subst percent)
 
-  add-zsh-hook precmd prompt_agnoster_precmd
+  add-zsh-hook precmd prompt_precmd
 
   zstyle ':vcs_info:*' enable git
-  zstyle ':vcs_info:*' check-for-changes false
+  zstyle ':vcs_info:*' check-for-changes true
   zstyle ':vcs_info:git*' formats '%b'
-  zstyle ':vcs_info:git*' actionformats '%b (%a)'
+  zstyle ':vcs_info:git*' actionformats '(%b|%a%u%c)'
 }
 
-prompt_agnoster_setup "$@"
+function get_space {
+    local str=$1$2
+    local zero='%([BSUbfksu]|([FB]|){*})'
+    local len=${#${(S%%)str//$~zero/}}
+    local size=$(( $COLUMNS - $len - 1 ))
+    local space=""
+    while [[ $size -gt 0 ]]; do
+        space="$space "
+        let size=$size-1
+    done
+    echo $space
+}
+
+prompt_setup "$@"
