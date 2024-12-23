@@ -106,6 +106,16 @@ prompt_context() {
   fi
 }
 
+prompt_docker_ctx() {
+  #: show only if there's a compose.yml and prod.yml file in the cwd
+  if [[ -f docker-compose.yml && -f prod.yml ]]; then
+    local docker_ctx=`docker context show --format '{{.Name}}' 2>/dev/null`
+    if [[ -n "$docker_ctx" ]]; then
+      prompt_segment CURRENT_BG 8 "docker:$docker_ctx "
+    fi
+  fi
+}
+
 prompt_new_line() {
   prompt_segment CURRENT_BG default "\n"
 }
@@ -120,6 +130,7 @@ prompt_prompt() {
 top_left () {
   prompt_dir
   prompt_git
+  prompt_docker_ctx
 }
 
 top_right () {
